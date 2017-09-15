@@ -96,11 +96,10 @@ public class MDPModelChecker extends ProbModelChecker
 	protected StateValues checkExpressionFunc(Model model, ExpressionFunc expr, BitSet statesOfInterest) throws PrismException
 	{
 		switch (expr.getNameCode()) {
-		case ExpressionFunc.PARTIAL: {
-//			checkPartialSat(model, expr, statesOfInterest);
-//			mainLog.println("------------------------SkippingNow----------------------------------------");
+		case ExpressionFunc.PARTIAL:
+			return checkPartialSat(model, expr, statesOfInterest);
+		case ExpressionFunc.WS:
 			return weightedSkipping(model,expr,statesOfInterest);
-		}
 		default:
 			return super.checkExpressionFunc(model, expr, statesOfInterest);
 		}
@@ -384,6 +383,7 @@ public class MDPModelChecker extends ProbModelChecker
 		
 		}
 
+		mainLog.println(product.getProductModel().infoString());
 		// System.out.println("The product MDP has " +
 		// product.getProductModel().getNumStates() + " states");
 
@@ -536,16 +536,22 @@ public class MDPModelChecker extends ProbModelChecker
 			}
 		}
 
-		int nTrims = 0;
+		int nStates = 0;
+		int nTrans = 0;
 		// trim rewards according to progression metric TODO: THis can be
 		// removed because now we return the progStates
-		/*
-		 * for(int i = 0; i < numStates; i++) { if(!progStates.get(i)) {
-		 * prodCosts.clearRewards(i); nTrims++; } }
-		 */
+		
+		for(int i = 0; i < numStates; i++) {
+			if(progStates.get(i)) {
+				nStates++;
+				nTrans = nTrans + productModel.getNumChoices(i);
+			} 
+		}
+		 
 
 		time = System.currentTimeMillis() - time;
-		mainLog.println("\nCleared costs for " + nTrims + " states where no more progression towards goal is possible.");
+		mainLog.println("\nPruned prod states: " + nStates + ". Pruned prod choices: " + nTrans);
+		mainLog.println("\nCleared costs for " + nStates + " states where no more progression towards goal is possible.");
 		mainLog.println("Time for cost trimming: " + time / 1000.0 + " seconds.");
 		return progStates;
 	}
